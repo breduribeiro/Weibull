@@ -1,0 +1,127 @@
+from operator import truediv
+from statistics import quantiles
+from tokenize import Number
+import streamlit as st
+from reliability.Distributions import Weibull_Distribution
+from reliability.Fitters import Fit_Weibull_2P
+from reliability.Probability_plotting import plot_points
+import matplotlib.pyplot as plt
+
+
+st.title("Weibull")
+amostras_falhadas = dict()
+amostras_censuradas = dict()
+xmin = 0
+xmax = 0
+num_falhas = st.sidebar.slider("Quantas amostras com falhas?", 0, 15, 0)
+num_censuradas = st.sidebar.slider(
+    "Quantas amostras censuradas?", 0, 15, 0)
+if num_falhas > 0:
+    st.sidebar.write("Amostras Falhadas:")
+    for i in range(num_falhas):
+        amostras_falhadas[i] = st.sidebar.number_input(
+            f"Amostra Falhada {i+1}", step=10)
+    st.write(f"Amostras Falhadas:")
+
+    for j in range(num_falhas):
+        (f"Amostra {j+1}: {amostras_falhadas[j]}")
+        if xmin == 0:
+            xmin = amostras_falhadas[j]
+        if amostras_falhadas[j] < xmin:
+            xmin = amostras_falhadas[j]
+        if xmax == 0:
+            xmax = amostras_falhadas[j]
+        if amostras_falhadas[j] > xmax:
+            xmax = amostras_falhadas[j]
+
+if num_censuradas > 0:
+    st.sidebar.write("Amostras Censuradas:")
+    for i in range(num_censuradas):
+        amostras_censuradas[i] = st.sidebar.number_input(
+            f"Amostra Censurada {i+num_falhas+1}", step=10)
+    st.write(f"Amostras Censuradas:")
+    for j in range(num_censuradas):
+        (f"Amostra {j+num_falhas+1}: {amostras_censuradas[j]}")
+        if xmin == 0:
+            xmin = amostras_falhadas[j]
+        if amostras_falhadas[j] < xmin:
+            xmin = amostras_falhadas[j]
+        if xmax == 0:
+            xmax = amostras_falhadas[j]
+        if amostras_falhadas[j] > xmax:
+            xmax = amostras_falhadas[j]
+
+if xmin != xmax:
+    xlim_min = st.sidebar.slider(
+        "Mínimo X Gráfico Weibull:", xmin//3, xmin, xmin//2)
+    xlim_max = st.sidebar.slider(
+        "Máximo X Gráfico Weibull:", xmax, xmax*3, xmax*2)
+
+CI = st.sidebar.slider("Intervalo de Confiança", 0.50, 0.99, 0.90)
+optimizer = st.sidebar.selectbox("Escolha o Otimizador",
+                                 ("Best", "TNC", "L-BFGS-B",
+                                  "Nelder-Mead", "Powell"),
+                                 help="Para testar todas as opções, escolhas 'best' e a melhor opção será escolhida"
+                                 )
+method = st.sidebar.selectbox("Escolha o Otimizador",
+                              ("MLE", "LS", "RRX",
+                                  "RRY"),
+                              help="""‘MLE’ (Estimativa de Máxima Verossimilhança),
+                              ‘LS’ (Mínimos Quadrados),
+                              ‘RRX’ (Rank Regressão em X),
+                              ‘RRY’ (Rank Regressão em Y).
+                              LS irá testar RRX e RRYe retornar o melhor."""
+                              )
+
+quartis = st.sidebar.radio(
+    "Mostrar os Quartis?", ("Sim", "Não"), horizontal=True)
+if quartis == "Sim":
+    quantiles = True
+else:
+    quantiles = None
+
+
+def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, method, quantiles):
+    failures = []
+    censored = []
+
+    for i in amostras_falhadas:
+        failures.append(amostras_falhadas[i])
+
+    for j in amostras_censuradas:
+        censored.append(amostras_censuradas[j])
+
+    fig = plt.figure()
+    plt.gcf().set_dpi(60)
+    plt.subplot(121)
+    fit = Fit_Weibull_2P(failures=failures,
+                         right_censored=censored,
+                         CI=CI,
+                         optimizer=optimizer,
+                         method=method,
+                         quantiles=quantiles
+                         )
+    dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
+    dist_1.PDF(label=dist_1.param_title_long)
+    plt.xlim(xlim_min, xlim_max)
+    plt.ylim(0.01, 0.99)
+    plt.subplot(122)
+    dist_1.PDF(label=dist_1.param_title_long)
+
+    f"Results from Fit_Weibull_2P({CI*100}% CI):"
+    f"Analysis method: {method}"
+    f"Optimizer: {optimizer}"
+    f"Quantidade Amostras Falhadas = {len(failures)}"
+    f"Quantidade Amostras Censuradas = {len(censored)} "
+    fit.results
+    fit.goodness_of_fit
+    fit.quantiles
+
+    st.pyplot(fig)
+
+    return
+
+
+if st.sidebar.button("Calcular"):
+    calculo_weibull(amostras_falhadas, amostras_censuradas,
+                    CI, optimizer, method, quantiles)

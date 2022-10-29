@@ -1,0 +1,2 @@
+matplotlib==3.5.2
+reliability==0.8.5

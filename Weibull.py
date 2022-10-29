@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 
 st.title("Weibull")
+col1, col2 = st.columns(2)
 amostras_falhadas = dict()
 amostras_censuradas = dict()
 xmin = 0
@@ -21,10 +22,10 @@ if num_falhas > 0:
     for i in range(num_falhas):
         amostras_falhadas[i] = st.sidebar.number_input(
             f"Amostra Falhada {i+1}", step=10)
-    st.write(f"Amostras Falhadas:")
+    col1.write(f"Amostras Falhadas:")
 
     for j in range(num_falhas):
-        (f"Amostra {j+1}: {amostras_falhadas[j]}")
+        col1.write(f"Amostra {j+1}: {amostras_falhadas[j]}")
         if xmin == 0:
             xmin = amostras_falhadas[j]
         if amostras_falhadas[j] < xmin:
@@ -39,9 +40,9 @@ if num_censuradas > 0:
     for i in range(num_censuradas):
         amostras_censuradas[i] = st.sidebar.number_input(
             f"Amostra Censurada {i+num_falhas+1}", step=10)
-    st.write(f"Amostras Censuradas:")
+    col2.write(f"Amostras Censuradas:")
     for j in range(num_censuradas):
-        (f"Amostra {j+num_falhas+1}: {amostras_censuradas[j]}")
+        col2.write(f"Amostra {j+num_falhas+1}: {amostras_censuradas[j]}")
         if xmin == 0:
             xmin = amostras_falhadas[j]
         if amostras_falhadas[j] < xmin:
@@ -58,12 +59,8 @@ if xmin != xmax:
         "Máximo X Gráfico Weibull:", xmax, xmax*3, xmax*2)
 
 CI = st.sidebar.slider("Intervalo de Confiança", 0.50, 0.99, 0.90)
-optimizer = st.sidebar.selectbox("Escolha o Otimizador",
-                                 ("Best", "TNC", "L-BFGS-B",
-                                  "Nelder-Mead", "Powell"),
-                                 help="Para testar todas as opções, escolhas 'best' e a melhor opção será escolhida"
-                                 )
-method = st.sidebar.selectbox("Escolha o Otimizador",
+
+method = st.sidebar.selectbox("Escolha o Método",
                               ("MLE", "LS", "RRX",
                                   "RRY"),
                               help="""‘MLE’ (Estimativa de Máxima Verossimilhança),
@@ -72,13 +69,16 @@ method = st.sidebar.selectbox("Escolha o Otimizador",
                               ‘RRY’ (Rank Regressão em Y).
                               LS irá testar RRX e RRYe retornar o melhor."""
                               )
-
-quartis = st.sidebar.radio(
-    "Mostrar os Quartis?", ("Sim", "Não"), horizontal=True)
-if quartis == "Sim":
-    quantiles = True
+if method == "MLE":
+    optimizer = st.sidebar.selectbox("Escolha o Otimizador",
+                                     ("Best", "TNC", "L-BFGS-B",
+                                      "Nelder-Mead", "Powell"),
+                                     help="""Habilitado apenas para o método MLE. Para testar todas as opções, escolhas 'best' 
+                                    e a melhor opção será escolhida."""
+                                     )
 else:
-    quantiles = None
+    st.sidebar.selectbox("Escolha o Otimizador", ("None"), disabled=True,
+                         help="Para testar todas as opções, escolhas 'best' e a melhor opção será escolhida")
 
 
 def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, method, quantiles):
@@ -99,7 +99,7 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
                          CI=CI,
                          optimizer=optimizer,
                          method=method,
-                         quantiles=quantiles
+                         quantiles=True
                          )
     dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
     dist_1.PDF(label=dist_1.param_title_long)
@@ -108,9 +108,9 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     plt.subplot(122)
     dist_1.PDF(label=dist_1.param_title_long)
 
-    f"Results from Fit_Weibull_2P({CI*100}% CI):"
-    f"Analysis method: {method}"
-    f"Optimizer: {optimizer}"
+    st.subheader(f"Resultados de Fit Weibull 2P({CI*100}% CI):")
+    f"Otimizador: {fit.optimizer}"
+    f"Método: {fit.method}"
     f"Quantidade Amostras Falhadas = {len(failures)}"
     f"Quantidade Amostras Censuradas = {len(censored)} "
     fit.results

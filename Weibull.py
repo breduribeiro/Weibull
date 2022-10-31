@@ -71,14 +71,23 @@ method = st.sidebar.selectbox("Escolha o Método",
                               )
 if method == "MLE":
     optimizer = st.sidebar.selectbox("Escolha o Otimizador",
-                                     ("Best", "TNC", "L-BFGS-B",
+                                     ("Best", "TNC" , "L-BFGS-B",
                                       "Nelder-Mead", "Powell"),
-                                     help="""Habilitado apenas para o método MLE. Para testar todas as opções, escolhas 'best' 
-                                    e a melhor opção será escolhida."""
+                                     help="""Habilitado apenas para o método MLE. 
+                                     Escolha entre 'Best', para testar todas e aplicar a melhor opção,
+                                     'TNC' (Newton Truncado),
+                                     'L-BFGS-B' (Broyden–Fletcher–Goldfarb–Shanno de Memória Limitada),
+                                     'Nelder-Mead' ou 'Powell"""
                                      )
 else:
+    optimizer = None
     st.sidebar.selectbox("Escolha o Otimizador", ("None"), disabled=True,
-                         help="Para testar todas as opções, escolhas 'best' e a melhor opção será escolhida")
+                         help="""Habilitado apenas para o método MLE. 
+                                     Escolha entre 'Best', para testar todas e aplicar a melhor opção,
+                                     'TNC' (Newton Truncado),
+                                     'L-BFGS-B' (Broyden–Fletcher–Goldfarb–Shanno de Memória Limitada),
+                                     'Nelder-Mead' ou 'Powell"""
+                                     )
 
 
 def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, method, quantiles):
@@ -90,7 +99,6 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
 
     for j in amostras_censuradas:
         censored.append(amostras_censuradas[j])
-
     fig = plt.figure()
     plt.gcf().set_dpi(60)
     plt.subplot(121)

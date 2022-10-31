@@ -114,7 +114,6 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     f"Quantidade Amostras Censuradas = {len(censored)} "
     fit.results
     fit.goodness_of_fit
-    fit.goodness_of_fit
     fit.quantiles
 
     st.pyplot(fig)

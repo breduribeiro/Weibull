@@ -24,16 +24,8 @@ if num_falhas > 0:
             f"Amostra Falhada {i+1}", step=10)
     col1.write(f"Amostras Falhadas:")
 
-    for j in range(num_falhas):
-        col1.write(f"Amostra {j+1}: {amostras_falhadas[j]}")
-        if xmin == 0:
-            xmin = amostras_falhadas[j]
-        if amostras_falhadas[j] < xmin:
-            xmin = amostras_falhadas[j]
-        if xmax == 0:
-            xmax = amostras_falhadas[j]
-        if amostras_falhadas[j] > xmax:
-            xmax = amostras_falhadas[j]
+    fmin = min(amostras_falhadas.values())
+    fmax = max(amostras_falhadas.values())
 
 if num_censuradas > 0:
     st.sidebar.write("Amostras Censuradas:")
@@ -43,14 +35,10 @@ if num_censuradas > 0:
     col2.write(f"Amostras Censuradas:")
     for j in range(num_censuradas):
         col2.write(f"Amostra {j+num_falhas+1}: {amostras_censuradas[j]}")
-        if xmin == 0:
-            xmin = amostras_falhadas[j]
-        if amostras_falhadas[j] < xmin:
-            xmin = amostras_falhadas[j]
-        if xmax == 0:
-            xmax = amostras_falhadas[j]
-        if amostras_falhadas[j] > xmax:
-            xmax = amostras_falhadas[j]
+    cmin = min(amostras_censuradas.values())
+    cmax = min(amostras_censuradas.values())
+xmin = min(fmin, cmin)
+xmax = max(fmax, cmax)
 
 if xmin > 0 and xmax > 0:
     xlim_min = st.sidebar.slider(
@@ -130,8 +118,10 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
 
     return
 
+
 if num_falhas + num_censuradas > 3:
-    calcular_Button = st.sidebar.button("Calcular", disabled=False, help="Número mínimo de amostras = 4 (ideal mínimo 6)")
+    calcular_Button = st.sidebar.button(
+        "Calcular", disabled=False, help="Número mínimo de amostras = 4 (ideal mínimo 6)")
 else:
     calcular_Button = st.sidebar.button(
         "Calcular", disabled=True, help="Número mínimo de amostras = 4 (ideal mínimo 6)")

@@ -23,7 +23,8 @@ if num_falhas > 0:
         amostras_falhadas[i] = st.sidebar.number_input(
             f"Amostra Falhada {i+1}", step=10)
     col1.write(f"Amostras Falhadas:")
-
+    for j in range(num_falhas):
+        col1.write(f"Amostra {j+1}: {amostras_falhadas[j]}")
     fmin = min(amostras_falhadas.values())
     fmax = max(amostras_falhadas.values())
     xmin = fmin

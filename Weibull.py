@@ -26,7 +26,8 @@ if num_falhas > 0:
 
     fmin = min(amostras_falhadas.values())
     fmax = max(amostras_falhadas.values())
-
+    xmin = fmin
+    xmax = fmax
 if num_censuradas > 0:
     st.sidebar.write("Amostras Censuradas:")
     for i in range(num_censuradas):
@@ -37,8 +38,9 @@ if num_censuradas > 0:
         col2.write(f"Amostra {j+num_falhas+1}: {amostras_censuradas[j]}")
     cmin = min(amostras_censuradas.values())
     cmax = min(amostras_censuradas.values())
-xmin = min(fmin, cmin)
-xmax = max(fmax, cmax)
+    if num_falhas > 0:
+        xmin = min(fmin, cmin)
+        xmax = max(fmax, cmax)
 
 if xmin > 0 and xmax > 0:
     xlim_min = st.sidebar.slider(

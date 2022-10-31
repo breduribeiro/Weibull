@@ -52,7 +52,7 @@ if num_censuradas > 0:
         if amostras_falhadas[j] > xmax:
             xmax = amostras_falhadas[j]
 
-if xmin != xmax:
+if xmin > 0 and xmax > 0:
     xlim_min = st.sidebar.slider(
         "Mínimo X Gráfico Weibull:", xmin//3, xmin, xmin//2)
     xlim_max = st.sidebar.slider(
@@ -71,7 +71,7 @@ method = st.sidebar.selectbox("Escolha o Método",
                               )
 if method == "MLE":
     optimizer = st.sidebar.selectbox("Escolha o Otimizador",
-                                     ("Best", "TNC" , "L-BFGS-B",
+                                     ("Best", "TNC", "L-BFGS-B",
                                       "Nelder-Mead", "Powell"),
                                      help="""Habilitado apenas para o método MLE. 
                                      Escolha entre 'Best', para testar todas e aplicar a melhor opção,
@@ -87,7 +87,7 @@ else:
                                      'TNC' (Newton Truncado),
                                      'L-BFGS-B' (Broyden–Fletcher–Goldfarb–Shanno de Memória Limitada),
                                      'Nelder-Mead' ou 'Powell"""
-                                     )
+                         )
 
 
 def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, method, quantiles):
@@ -123,13 +123,18 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     f"Quantidade Amostras Censuradas = {len(censored)} "
     fit.results
     fit.goodness_of_fit
+    fit.goodness_of_fit
     fit.quantiles
 
     st.pyplot(fig)
 
     return
 
-
-if st.sidebar.button("Calcular"):
+if num_falhas + num_censuradas > 3:
+    calcular_Button = st.sidebar.button("Calcular", disabled=False, help="Número mínimo de amostras = 4 (ideal mínimo 6)")
+else:
+    calcular_Button = st.sidebar.button(
+        "Calcular", disabled=True, help="Número mínimo de amostras = 4 (ideal mínimo 6)")
+if calcular_Button:
     calculo_weibull(amostras_falhadas, amostras_censuradas,
                     CI, optimizer, method, quantiles)

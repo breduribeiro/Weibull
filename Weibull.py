@@ -1,6 +1,4 @@
-from operator import truediv
 from statistics import quantiles
-from tokenize import Number
 import streamlit as st
 from reliability.Distributions import Weibull_Distribution
 from reliability.Fitters import Fit_Weibull_2P
@@ -64,7 +62,7 @@ if method == "MLE":
     optimizer = st.sidebar.selectbox("Escolha o Otimizador",
                                      ("Best", "TNC", "L-BFGS-B",
                                       "Nelder-Mead", "Powell"),
-                                     help="""Habilitado apenas para o método MLE. 
+                                     help="""Habilitado apenas para o método MLE.
                                      Escolha entre 'Best', para testar todas e aplicar a melhor opção,
                                      'TNC' (Newton Truncado),
                                      'L-BFGS-B' (Broyden–Fletcher–Goldfarb–Shanno de Memória Limitada),
@@ -73,7 +71,7 @@ if method == "MLE":
 else:
     optimizer = None
     st.sidebar.selectbox("Escolha o Otimizador", ("None"), disabled=True,
-                         help="""Habilitado apenas para o método MLE. 
+                         help="""Habilitado apenas para o método MLE.
                                      Escolha entre 'Best', para testar todas e aplicar a melhor opção,
                                      'TNC' (Newton Truncado),
                                      'L-BFGS-B' (Broyden–Fletcher–Goldfarb–Shanno de Memória Limitada),
@@ -90,9 +88,8 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
 
     for j in amostras_censuradas:
         censored.append(amostras_censuradas[j])
+
     fig = plt.figure()
-    plt.gcf().set_dpi(60)
-    plt.subplot(121)
     fit = Fit_Weibull_2P(failures=failures,
                          right_censored=censored,
                          CI=CI,
@@ -100,13 +97,9 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
                          method=method,
                          quantiles=True
                          )
-    dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
-    dist_1.PDF(label=dist_1.param_title_long)
+
     plt.xlim(xlim_min, xlim_max)
     plt.ylim(0.01, 0.99)
-    plt.subplot(122)
-    dist_1.PDF(label=dist_1.param_title_long)
-
     st.subheader(f"Resultados de Fit Weibull 2P({CI*100}% CI):")
     f"Otimizador: {fit.optimizer}"
     f"Método: {fit.method}"
@@ -115,15 +108,23 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     fit.results
     fit.goodness_of_fit
     fit.quantiles
-
-    st.pyplot(fig)
-
+    cont1 = st.container()
+    cont2 = st.container()
+    with cont1:
+        st.pyplot(fig)
+    with cont2:
+        fig = plt.figure()
+        dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
+        dist_1.PDF(label="dist_1.param_title_long")
+        st.pyplot(fig)
     return
 
 
 if num_falhas + num_censuradas > 3:
     calcular_Button = st.sidebar.button(
         "Calcular", disabled=False, help="Número mínimo de amostras = 4 (ideal mínimo 6)")
+    st.sidebar.write("")
+    st.sidebar.write("")
 else:
     calcular_Button = st.sidebar.button(
         "Calcular", disabled=True, help="Número mínimo de amostras = 4 (ideal mínimo 6)")

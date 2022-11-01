@@ -7,6 +7,33 @@ import matplotlib.pyplot as plt
 
 
 st.title("Weibull")
+# st.subheader("Instruções")
+expand = st.expander("Instruções", expanded=True)
+with expand:
+    """Os campos de preenchimento para realização do cálculo Weibull estão na barra
+    à esquerda. Caso não a esteja visualizando, é necessário expandi-la na seta no canto superior esquerdo.
+    \nSelecione o número de amostras que falharam (Amostras Falhadas). O cálculo Weibull exige o mínimo de
+    4 amostras, porém é recomendado no mínimo 6 amostras.
+    \nSelecione o número de amostras que foram interrompidas (Amostas Censuradas).
+    \nPara cada amostra falhada ou censurada, insira, no campo indicado, a sua vida.
+    \nSelecione o Intervalo de Confiança CI (entre 50% e 99%).
+    \nEscolha o método de linearização:
+    \n[Mínimos Quadrados (RRX, RRY ou LS)](https://pt.wikipedia.org/wiki/M%C3%A9todo_dos_m%C3%ADnimos_quadrados)
+    (LS o software irá escolher a melhor opção entre RRX e RRY)
+    \n[Máxima Verossimilhança (MLE)](https://pt.wikipedia.org/wiki/M%C3%A1xima_verossimilhan%C3%A7a)
+    \nEscolha o método de otimização (apenas disponível para o método MLE) ou 'Best' para testar todas e 
+    escolher a melhor opção:
+    \n[Newton Truncado (TNC)](https://en.wikipedia.org/wiki/Truncated_Newton_method)
+    \n[L-BFGS-B' (Broyden–Fletcher–Goldfarb–Shanno de Memória Limitada)](https://en.wikipedia.org/wiki/Limited-memory_BFGS)
+    \n[Nelder-Mead](https://en.wikipedia.org/wiki/Nelder%E2%80%93Mead_method)
+    \n[Powell](https://en.wikipedia.org/wiki/Powell%27s_method)
+    \nClique em 'Calcular'
+    \nSerão apresentados as vidas das amostras falhadas e censuradas, o Método e o Otimizador escolhidos,
+    os parâmetros Alfa e Beta, os parâmetros para o cálculo da regressão linear, a tabela dos percentis de falha
+    e os gráficos Weibull de Probabilidade e Distribuição. Todas as tabelas e gráficos podem ser expandidos
+    (ícone de expansão aparece no canto superior direito do elemento selecionado), selecionados e copiados
+    para a área de transferência."""
+
 col1, col2 = st.columns(2)
 amostras_falhadas = dict()
 amostras_censuradas = dict()

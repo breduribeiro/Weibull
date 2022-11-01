@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 st.title("Weibull")
 # st.subheader("Instruções")
-expand = st.expander("Instruções", expanded=True)
+expand = st.expander("Instruções", expanded=False)
 with expand:
     """Os campos de preenchimento para realização do cálculo Weibull estão na barra
     à esquerda. Caso não a esteja visualizando, é necessário expandi-la na seta no canto superior esquerdo.

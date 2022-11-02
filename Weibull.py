@@ -1,6 +1,7 @@
 from ast import Lambda
 from operator import truediv
 from statistics import quantiles
+from tkinter import OFF
 import streamlit as st
 from reliability.Distributions import Weibull_Distribution
 from reliability.Fitters import Fit_Weibull_2P
@@ -120,7 +121,8 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     for j in amostras_censuradas:
         censored.append(amostras_censuradas[j])
 
-    fig = plt.figure(figsize=(12, 5))
+    fig = plt.figure()
+
     fit = Fit_Weibull_2P(failures=failures,
                          right_censored=censored,
                          CI=CI,
@@ -131,6 +133,11 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
 
     plt.xlim(xlim_min, xlim_max)
     plt.ylim(0.01, 0.99)
+    plt.title(f"""Probabilidade Weibull
+             \n(α={fit.alpha:.2f}, β={fit.beta:.2f})""")
+    plt.xlabel('Vida')
+    plt.ylabel('Probabilidade de Falha')
+    plt.legend().remove()
     st.subheader(f"Resultados de Fit Weibull 2P({CI*100}% CI):")
     f"Otimizador: {fit.optimizer}"
     f"Método: {fit.method}"
@@ -143,14 +150,20 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     cont2 = st.container()
     with cont1:
         st.pyplot(fig)
+
     with cont2:
         fig = plt.figure(figsize=(12, 8))
         dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
         dist_1.PDF(label="dist_1.param_title_long")
+        plt.title(f"""Distribuição Weibull
+                 \n(α={fit.alpha:.2f}, β={fit.beta:.2f})""")
+        plt.xlabel('Vida')
+        plt.ylabel('Densidade')
         st.pyplot(fig)
     return
 
-if num_falhas  >= 4:
+
+if num_falhas >= 4:
     calcular_Button = st.sidebar.button(
         "Calcular", disabled=False, help="Número mínimo de amostras falhadas = 4 (ideal mínimo 6)")
     st.sidebar.write("")

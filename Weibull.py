@@ -1,14 +1,9 @@
-from ast import Lambda
-from operator import truediv
 from statistics import quantiles
-from tkinter import OFF
 import streamlit as st
 from reliability.Distributions import Weibull_Distribution
 from reliability.Fitters import Fit_Weibull_2P
 from reliability.Probability_plotting import plot_points
 import matplotlib.pyplot as plt
-import pandas as pd
-from pandas import Series, DataFrame
 
 st.title(
     "[Weibull](https://pt.wikipedia.org/wiki/Distribui%C3%A7%C3%A3o_de_Weibull)")

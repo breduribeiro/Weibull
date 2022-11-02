@@ -1,13 +1,17 @@
+from ast import Lambda
+from operator import truediv
 from statistics import quantiles
 import streamlit as st
 from reliability.Distributions import Weibull_Distribution
 from reliability.Fitters import Fit_Weibull_2P
 from reliability.Probability_plotting import plot_points
 import matplotlib.pyplot as plt
+import pandas as pd
+from pandas import Series, DataFrame
 
+st.title(
+    "[Weibull](https://pt.wikipedia.org/wiki/Distribui%C3%A7%C3%A3o_de_Weibull)")
 
-st.title("Weibull")
-# st.subheader("Instruções")
 expand = st.expander("Instruções", expanded=False)
 with expand:
     """Os campos de preenchimento para realização do cálculo Weibull estão na barra
@@ -116,13 +120,13 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     for j in amostras_censuradas:
         censored.append(amostras_censuradas[j])
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12, 5))
     fit = Fit_Weibull_2P(failures=failures,
                          right_censored=censored,
                          CI=CI,
                          optimizer=optimizer,
                          method=method,
-                         quantiles=True
+                         quantiles=True,
                          )
 
     plt.xlim(xlim_min, xlim_max)
@@ -140,21 +144,20 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     with cont1:
         st.pyplot(fig)
     with cont2:
-        fig = plt.figure()
+        fig = plt.figure(figsize=(12, 8))
         dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
         dist_1.PDF(label="dist_1.param_title_long")
         st.pyplot(fig)
     return
 
-
-if num_falhas + num_censuradas > 3:
+if num_falhas  >= 4:
     calcular_Button = st.sidebar.button(
-        "Calcular", disabled=False, help="Número mínimo de amostras = 4 (ideal mínimo 6)")
+        "Calcular", disabled=False, help="Número mínimo de amostras falhadas = 4 (ideal mínimo 6)")
     st.sidebar.write("")
     st.sidebar.write("")
 else:
     calcular_Button = st.sidebar.button(
-        "Calcular", disabled=True, help="Número mínimo de amostras = 4 (ideal mínimo 6)")
+        "Calcular", disabled=True, help="Número mínimo de amostras falhadas = 4 (ideal mínimo 6)")
 if calcular_Button:
     calculo_weibull(amostras_falhadas, amostras_censuradas,
                     CI, optimizer, method, quantiles)

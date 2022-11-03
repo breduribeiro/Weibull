@@ -128,7 +128,7 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
 
     plt.xlim(xlim_min, xlim_max)
     plt.ylim(0.01, 0.99)
-    plt.title(f"""Probabilidade Weibull
+    plt.title(f"""Probabilidade Weibull ({CI*100:.0f}% CI)
              \n(α={fit.alpha:.2f}, β={fit.beta:.2f})""")
     plt.xlabel('Vida')
     plt.ylabel('Probabilidade de Falha')

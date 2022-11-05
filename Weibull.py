@@ -18,9 +18,9 @@ with expand:
     \nPara cada amostra falhada ou censurada, insira, no campo indicado, a sua vida.
     \nSelecione o Intervalo de Confiança CI (entre 50% e 99%).
     \nEscolha o método de linearização:
-    \n[Mínimos Quadrados (RRX, RRY ou LS)](https://pt.wikipedia.org/wiki/M%C3%A9todo_dos_m%C3%ADnimos_quadrados)
+    \n[Mínimos Quadrados (RRX, RRY ou LS)](https://reliability.readthedocs.io/en/latest/How%20does%20Least%20Squares%20Estimation%20work.html)
     (LS o software irá escolher a melhor opção entre RRX e RRY)
-    \n[Máxima Verossimilhança (MLE)](https://pt.wikipedia.org/wiki/M%C3%A1xima_verossimilhan%C3%A7a)
+    \n[Máxima Verossimilhança (MLE)](https://reliability.readthedocs.io/en/latest/How%20does%20Maximum%20Likelihood%20Estimation%20work.html)
     \nEscolha o método de otimização (apenas disponível para o método MLE) ou 'Best' para testar todas e 
     escolher a melhor opção:
     \n[Newton Truncado (TNC)](https://en.wikipedia.org/wiki/Truncated_Newton_method)
@@ -117,44 +117,47 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         censored.append(amostras_censuradas[j])
 
     fig = plt.figure()
+    try:
+        fit = Fit_Weibull_2P(failures=failures,
+                             right_censored=censored,
+                             CI=CI,
+                             optimizer=optimizer,
+                             method=method,
+                             quantiles=True,
+                             )
 
-    fit = Fit_Weibull_2P(failures=failures,
-                         right_censored=censored,
-                         CI=CI,
-                         optimizer=optimizer,
-                         method=method,
-                         quantiles=True,
-                         )
-
-    plt.xlim(xlim_min, xlim_max)
-    plt.ylim(0.01, 0.99)
-    plt.title(f"""Probabilidade Weibull ({CI*100:.0f}% CI)
-             \n(α={fit.alpha:.2f}, β={fit.beta:.2f})""")
-    plt.xlabel('Vida')
-    plt.ylabel('Probabilidade de Falha')
-    plt.legend().remove()
-    st.subheader(f"Resultados de Fit Weibull 2P({CI*100}% CI):")
-    f"Otimizador: {fit.optimizer}"
-    f"Método: {fit.method}"
-    f"Quantidade Amostras Falhadas = {len(failures)}"
-    f"Quantidade Amostras Censuradas = {len(censored)} "
-    fit.results
-    fit.goodness_of_fit
-    fit.quantiles
-    cont1 = st.container()
-    cont2 = st.container()
-    with cont1:
-        st.pyplot(fig)
-
-    with cont2:
-        fig = plt.figure(figsize=(12, 8))
-        dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
-        dist_1.PDF(label="dist_1.param_title_long")
-        plt.title(f"""Distribuição Weibull
-                 \n(α={fit.alpha:.2f}, β={fit.beta:.2f})""")
+        plt.xlim(xlim_min, xlim_max)
+        plt.ylim(0.01, 0.99)
+        plt.title(f"""Probabilidade Weibull ({CI*100:.0f}% CI)
+                \n(α={fit.alpha:.2f}, β={fit.beta:.2f})""")
         plt.xlabel('Vida')
-        plt.ylabel('Densidade')
-        st.pyplot(fig)
+        plt.ylabel('Probabilidade de Falha')
+        plt.legend().remove()
+        st.subheader(f"Resultados de Fit Weibull 2P({CI*100}% CI):")
+        f"Otimizador: {fit.optimizer}"
+        f"Método: {fit.method}"
+        f"Quantidade Amostras Falhadas = {len(failures)}"
+        f"Quantidade Amostras Censuradas = {len(censored)} "
+        fit.results
+        fit.goodness_of_fit
+        fit.quantiles
+        cont1 = st.container()
+        cont2 = st.container()
+        with cont1:
+            st.pyplot(fig)
+
+        with cont2:
+            fig = plt.figure(figsize=(12, 8))
+            dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
+            dist_1.PDF(label="dist_1.param_title_long")
+            plt.title(f"""Distribuição Weibull
+                    \n(α={fit.alpha:.2f}, β={fit.beta:.2f})""")
+            plt.xlabel('Vida')
+            plt.ylabel('Densidade')
+            st.pyplot(fig)
+    except ValueError as erro:
+        st.error(
+            "Não foi possível realizar a regressão com o Método selecionado. Tente novamente, escolhendo outro Método.")
     return
 
 

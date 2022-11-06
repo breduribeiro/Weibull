@@ -1,9 +1,13 @@
 from statistics import quantiles
 import streamlit as st
+import streamlit.components.v1 as components
 from reliability.Distributions import Weibull_Distribution
 from reliability.Fitters import Fit_Weibull_2P
 from reliability.Probability_plotting import plot_points
 import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from scipy.interpolate import interp1d
 
 st.title(
     "[Weibull](https://pt.wikipedia.org/wiki/Distribui%C3%A7%C3%A3o_de_Weibull)")
@@ -21,7 +25,7 @@ with expand:
     \n[Mínimos Quadrados (RRX, RRY ou LS)](https://reliability.readthedocs.io/en/latest/How%20does%20Least%20Squares%20Estimation%20work.html)
     (LS o software irá escolher a melhor opção entre RRX e RRY)
     \n[Máxima Verossimilhança (MLE)](https://reliability.readthedocs.io/en/latest/How%20does%20Maximum%20Likelihood%20Estimation%20work.html)
-    \nEscolha o método de otimização (apenas disponível para o método MLE) ou 'Best' para testar todas e 
+    \nEscolha o método de otimização (apenas disponível para o método MLE) ou 'Best' para testar todas e
     escolher a melhor opção:
     \n[Newton Truncado (TNC)](https://en.wikipedia.org/wiki/Truncated_Newton_method)
     \n[L-BFGS-B' (Broyden–Fletcher–Goldfarb–Shanno de Memória Limitada)](https://en.wikipedia.org/wiki/Limited-memory_BFGS)
@@ -74,7 +78,10 @@ if xmin > 0 and xmax > 0:
     xlim_max = st.sidebar.slider(
         "Máximo X Gráfico Weibull:", xmax, xmax*3, xmax*2)
 
-CI = st.sidebar.slider("Intervalo de Confiança", 0.50, 0.99, 0.90)
+CI = st.sidebar.slider("Intervalo de Confiança - C", 0.50, 0.99, 0.90)
+
+vida = st.sidebar.number_input(
+    "Defina o equivalente a 1 vida (opicional)", step=10)
 
 method = st.sidebar.selectbox("Escolha o Método",
                               ("MLE", "LS", "RRX",
@@ -109,14 +116,13 @@ else:
 def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, method, quantiles):
     failures = []
     censored = []
-
     for i in amostras_falhadas:
         failures.append(amostras_falhadas[i])
 
     for j in amostras_censuradas:
         censored.append(amostras_censuradas[j])
 
-    fig = plt.figure()
+    fig, ax = plt.subplots()
     try:
         fit = Fit_Weibull_2P(failures=failures,
                              right_censored=censored,
@@ -128,38 +134,87 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
 
         plt.xlim(xlim_min, xlim_max)
         plt.ylim(0.01, 0.99)
-        plt.title(f"""Probabilidade Weibull ({CI*100:.0f}% CI)
-                \n(α={fit.alpha:.2f}, β={fit.beta:.2f})""")
+        alpha = f'{fit.alpha:_.2f}'
+        alpha = alpha.replace('.', ',').replace('_', '.')
+        beta = f'{fit.beta:_.2f}'
+        beta = beta.replace('.', ',').replace('_', '.')
+        plt.title(f"""Probabilidade Weibull ({CI:.0%} CI)
+                    \n(α={alpha}; β={beta})""")
         plt.xlabel('Vida')
         plt.ylabel('Probabilidade de Falha')
         plt.legend().remove()
-        st.subheader(f"Resultados de Fit Weibull 2P({CI*100}% CI):")
+        st.subheader(f"Resultados de Fit Weibull 2P({CI:.0%} CI):")
         f"Otimizador: {fit.optimizer}"
         f"Método: {fit.method}"
         f"Quantidade Amostras Falhadas = {len(failures)}"
         f"Quantidade Amostras Censuradas = {len(censored)} "
-        fit.results
-        fit.goodness_of_fit
-        fit.quantiles
+
+        st.dataframe(pd.DataFrame(fit.results).style.format(
+            decimal=',', thousands='.', precision=2))
+        st.dataframe(pd.DataFrame(fit.goodness_of_fit).style.format(
+            decimal=',', thousands='.', precision=2))
+        st.dataframe(pd.DataFrame(fit.quantiles).style.format(
+            decimal=',', thousands='.', precision=2))
+
         cont1 = st.container()
         cont2 = st.container()
+
         with cont1:
+            Abaixo = fit.quantiles.loc[fit.quantiles['Lower Estimate'] < vida]
+            Acima = fit.quantiles.loc[fit.quantiles['Lower Estimate'] > vida]
+            if Abaixo.size > 0 and Acima.size > 0:
+                x = [
+                    np.log10(
+                        Abaixo.values[(Abaixo['Lower Estimate'].size)-1][1]),
+                    np.log10(Acima.values[0][1])]
+                y = [
+                    np.log10(
+                        Abaixo.values[(Abaixo['Lower Estimate'].size)-1][0]),
+                    np.log10(Acima.values[0][0])]
+                interpolate = interp1d(x, y)
+                Falha_Vida = 10**(interpolate(np.log10(vida)))
+                texto_annotate = f'{Falha_Vida:.1%}'
+                texto_annotate = texto_annotate.replace('.', ',')
+                ax.annotate(
+                    f"""Probabilidade máxima de \nfalha para 1 vida: {texto_annotate}""",
+                    xy=(vida, Falha_Vida),
+                    xytext=(-100, 40),
+                    textcoords='offset points',
+                    bbox={'boxstyle': 'round', 'fc': 'w'},
+                    arrowprops={'arrowstyle': '->'}
+                )
+
             st.pyplot(fig)
 
         with cont2:
-            fig = plt.figure(figsize=(12, 8))
+            fig, ax = plt.subplots()
             dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
-            dist_1.PDF(label="dist_1.param_title_long")
+            yvalues = dist_1.PDF()
             plt.title(f"""Distribuição Weibull
-                    \n(α={fit.alpha:.2f}, β={fit.beta:.2f})""")
+                        \n(α={alpha}; β={beta})""")
             plt.xlabel('Vida')
             plt.ylabel('Densidade')
+
+            for axes in fig.axes:
+                for line in axes.get_lines():
+                    # get the x and y coords
+                    xy_data = line.get_xydata()
+                    df = pd.DataFrame(xy_data)
+                    mean = (df.loc[df[1].idxmax()])
+                    ax.annotate(
+                        f'Mediana = {mean[0]:.0f}',
+                        xy=(mean[0], mean[1]),
+                        xytext=(15, 15),
+                        textcoords='offset points',
+                        bbox={'boxstyle': 'round', 'fc': 'w'},
+                        arrowprops={'arrowstyle': '->'}
+                    )
             st.pyplot(fig)
+
     except ValueError as erro:
         st.error(
             "Não foi possível realizar a regressão com o Método selecionado. Tente novamente, escolhendo outro Método.")
     return
-
 
 if num_falhas >= 4:
     calcular_Button = st.sidebar.button(

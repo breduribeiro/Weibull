@@ -243,3 +243,4 @@ cols[7].markdown(
              alt='Mail to' style='width:20px;height:20px;'>
         </a>""",
     unsafe_allow_html=True)
+st.sidebar.write("")

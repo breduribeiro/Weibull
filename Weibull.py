@@ -21,6 +21,7 @@ with expand:
     \nSelecione o número de amostras que foram interrompidas (Amostas Censuradas).
     \nPara cada amostra falhada ou censurada, insira, no campo indicado, a sua vida.
     \nSelecione o Intervalo de Confiança CI (entre 50% e 99%).
+    \nOpcional: Defina o equivalente a 1 vida. Neste caso será inserida indicação de chance de falha para 1 vida no gráfico.
     \nEscolha o método de linearização:
     \n[Mínimos Quadrados (RRX, RRY ou LS)](https://reliability.readthedocs.io/en/latest/How%20does%20Least%20Squares%20Estimation%20work.html)
     (LS o software irá escolher a melhor opção entre RRX e RRY)
@@ -216,14 +217,29 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
             "Não foi possível realizar a regressão com o Método selecionado. Tente novamente, escolhendo outro Método.")
     return
 
+
 if num_falhas >= 4:
     calcular_Button = st.sidebar.button(
         "Calcular", disabled=False, help="Número mínimo de amostras falhadas = 4 (ideal mínimo 6)")
-    st.sidebar.write("")
-    st.sidebar.write("")
+
 else:
     calcular_Button = st.sidebar.button(
         "Calcular", disabled=True, help="Número mínimo de amostras falhadas = 4 (ideal mínimo 6)")
 if calcular_Button:
     calculo_weibull(amostras_falhadas, amostras_censuradas,
                     CI, optimizer, method, quantiles)
+
+st.sidebar.write("Desenvolvido por **Breno Ribeiro**")
+cols = st.sidebar.columns(8)
+cols[6].markdown(
+    """<a href='https://www.linkedin.com/in/breno-ribeiro-8b062890/'>
+            <img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2RYeN56EvozwyyxYGDw4dTu-pbUZyNxnF93zSLUcOlQ&s'
+             alt='Linkedin' style='width:20px;height:20px;'>
+        </a>""",
+    unsafe_allow_html=True)
+cols[7].markdown(
+    """<a href='mailto:breduribeiro@gmail.com'>
+            <img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAAF43Dcua1axzMUg1OIG-xjuKerm29tGX7SZnbskgAw&s'
+             alt='Mail to' style='width:20px;height:20px;'>
+        </a>""",
+    unsafe_allow_html=True)

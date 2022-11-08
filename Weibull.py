@@ -9,6 +9,15 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
 
+
+def valorB(B):
+    if B == 'Nenhum':
+        B = None
+    else:
+        B = B[1:]
+    return B
+
+
 st.title(
     "[Weibull](https://pt.wikipedia.org/wiki/Distribui%C3%A7%C3%A3o_de_Weibull)")
 
@@ -81,6 +90,14 @@ if xmin > 0 and xmax > 0:
 
 CI = st.sidebar.slider("Intervalo de Confiança - C", 0.50, 0.99, 0.90)
 
+B = st.sidebar.selectbox("Defina o B desejado (opcional)",
+                         ('Nenhum', 'B5', 'B10', 'B25', 'B50'),
+                         help="""O B define a Probalidade (R) desejada.
+                        A seleção escolhida irá indicar a vida prevista 
+                        para o B escolhido.""")
+B = valorB(B)
+print(B)
+
 vida = st.sidebar.number_input(
     "Defina o equivalente a 1 vida (opicional)", step=10)
 
@@ -114,7 +131,7 @@ else:
                          )
 
 
-def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, method, quantiles):
+def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, method, B):
     failures = []
     censored = []
     for i in amostras_falhadas:
@@ -123,8 +140,8 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     for j in amostras_censuradas:
         censored.append(amostras_censuradas[j])
 
-    fig, ax = plt.subplots()
     try:
+        fig1, ax1 = plt.subplots()
         fit = Fit_Weibull_2P(failures=failures,
                              right_censored=censored,
                              CI=CI,
@@ -157,60 +174,57 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         st.dataframe(pd.DataFrame(fit.quantiles).style.format(
             decimal=',', thousands='.', precision=2))
 
-        cont1 = st.container()
-        cont2 = st.container()
+        Abaixo = fit.quantiles.loc[fit.quantiles['Lower Estimate'] < vida]
+        Acima = fit.quantiles.loc[fit.quantiles['Lower Estimate'] > vida]
 
-        with cont1:
-            Abaixo = fit.quantiles.loc[fit.quantiles['Lower Estimate'] < vida]
-            Acima = fit.quantiles.loc[fit.quantiles['Lower Estimate'] > vida]
-            if Abaixo.size > 0 and Acima.size > 0:
-                x = [
-                    np.log10(
-                        Abaixo.values[(Abaixo['Lower Estimate'].size)-1][1]),
-                    np.log10(Acima.values[0][1])]
-                y = [
-                    np.log10(
-                        Abaixo.values[(Abaixo['Lower Estimate'].size)-1][0]),
-                    np.log10(Acima.values[0][0])]
-                interpolate = interp1d(x, y)
-                Falha_Vida = 10**(interpolate(np.log10(vida)))
-                texto_annotate = f'{Falha_Vida:.1%}'
-                texto_annotate = texto_annotate.replace('.', ',')
-                ax.annotate(
-                    f"""Probabilidade máxima de \nfalha para 1 vida: {texto_annotate}""",
-                    xy=(vida, Falha_Vida),
-                    xytext=(-100, 40),
-                    textcoords='offset points',
-                    bbox={'boxstyle': 'round', 'fc': 'w'},
-                    arrowprops={'arrowstyle': '->'}
-                )
+        if B != None:
+            R = (float(B)/100)
+            Vida_B = (
+                fit.quantiles.loc[fit.quantiles['Quantile'] == R]).values[0][1]
+            B_annotate = f'{Vida_B:.0f}'
+            annot2 = ax1.annotate(
+                f"""B{B}: {B_annotate}""",
+                xy=(Vida_B, 0.01),
+                xytext=(5, 5),
+                textcoords='offset points'
+            )
+            plt.plot([xlim_min, Vida_B, Vida_B],
+                     [R, R, 0.01], 'blue')
 
-            st.pyplot(fig)
+        if Abaixo.size > 0 and Acima.size > 0:
+            x = [
+                np.log10(
+                    Abaixo.values[(Abaixo['Lower Estimate'].size)-1][1]),
+                np.log10(Acima.values[0][1])]
+            y = [
+                np.log10(
+                    Abaixo.values[(Abaixo['Lower Estimate'].size)-1][0]),
+                np.log10(Acima.values[0][0])]
+            interpolate = interp1d(x, y)
+            Falha_Vida = 10**(interpolate(np.log10(vida)))
+            texto_annotate = f'{Falha_Vida:.1%}'
+            texto_annotate = texto_annotate.replace('.', ',')
+            annot1 = ax1.annotate(
+                f"""1 vida: {texto_annotate}""",
+                xy=(xlim_min, Falha_Vida),
+                xytext=(5, 5),
+                textcoords='offset points'
+            )
+            annot1.set_visible(True)
+            plt.plot([xlim_min, vida, vida], [
+                     Falha_Vida, Falha_Vida, 0.01], 'red')
+        st.pyplot(fig1)
 
-        with cont2:
-            fig, ax = plt.subplots()
-            dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
-            yvalues = dist_1.PDF()
-            plt.title(f"""Distribuição Weibull
-                        \n(α={alpha}; β={beta})""")
-            plt.xlabel('Vida')
-            plt.ylabel('Densidade')
+        # with cont2:
+        fig2, ax2 = plt.subplots()
+        dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
+        yvalues = dist_1.PDF()
+        plt.title(f"""Distribuição Weibull
+                    \n(α={alpha}; β={beta})""")
+        plt.xlabel('Vida')
+        plt.ylabel('Densidade')
 
-            for axes in fig.axes:
-                for line in axes.get_lines():
-                    # get the x and y coords
-                    xy_data = line.get_xydata()
-                    df = pd.DataFrame(xy_data)
-                    mean = (df.loc[df[1].idxmax()])
-                    ax.annotate(
-                        f'Mediana = {mean[0]:.0f}',
-                        xy=(mean[0], mean[1]),
-                        xytext=(15, 15),
-                        textcoords='offset points',
-                        bbox={'boxstyle': 'round', 'fc': 'w'},
-                        arrowprops={'arrowstyle': '->'}
-                    )
-            st.pyplot(fig)
+        st.pyplot(fig2)
 
     except ValueError as erro:
         st.error(
@@ -218,16 +232,16 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     return
 
 
-if num_falhas >= 4:
+if num_falhas >= 5:
     calcular_Button = st.sidebar.button(
-        "Calcular", disabled=False, help="Número mínimo de amostras falhadas = 4 (ideal mínimo 6)")
+        "Calcular", disabled=False, help="Número mínimo de amostras falhadas = 5 (ideal mínimo 6)")
 
 else:
     calcular_Button = st.sidebar.button(
-        "Calcular", disabled=True, help="Número mínimo de amostras falhadas = 4 (ideal mínimo 6)")
+        "Calcular", disabled=True, help="Número mínimo de amostras falhadas = 5 (ideal mínimo 6)")
 if calcular_Button:
     calculo_weibull(amostras_falhadas, amostras_censuradas,
-                    CI, optimizer, method, quantiles)
+                    CI, optimizer, method, B)
 
 st.sidebar.write("Desenvolvido por **Breno Ribeiro**")
 cols = st.sidebar.columns(8)

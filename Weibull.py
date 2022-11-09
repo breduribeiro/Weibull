@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
 
-
+# Programa para análise estatística de vida de amostras através do cálculo Weibull
 st.title(
     "[Weibull](https://pt.wikipedia.org/wiki/Distribui%C3%A7%C3%A3o_de_Weibull)")
 
@@ -39,6 +39,7 @@ with expand:
     (ícone de expansão aparece no canto superior direito do elemento selecionado), selecionados e copiados
     para a área de transferência."""
 
+# Indicação do número de amostras falhadas e censuradas e vida de cada amostra
 col1, col2 = st.columns(2)
 amostras_falhadas = dict()
 amostras_censuradas = dict()
@@ -73,14 +74,17 @@ if num_censuradas > 0:
         xmin = min(fmin, cmin)
         xmax = max(fmax, cmax)
 
+# Definição dos limites mínimos e máximos de X (vida) do gráfico Weibull
 if xmin > 0 and xmax > 0:
     xlim_min = st.sidebar.slider(
         "Mínimo X Gráfico Weibull:", xmin//3, xmin, xmin//2)
     xlim_max = st.sidebar.slider(
         "Máximo X Gráfico Weibull:", xmax, xmax*3, xmax*2)
 
+# Definição do Intervalo de Confiança (C)
 CI = st.sidebar.slider("Intervalo de Confiança - C", 0.50, 0.99, 0.90)
 
+# Definição da Confiabilidade (B para Probabilidade de falha, R para Probabilidade de Sucesso)
 B = st.sidebar.selectbox("Defina o B desejado (opcional)",
                          ('Nenhum', 'B5', 'B10', 'B25', 'B50'),
                          help="""O B define a Probalidade (R) desejada.
@@ -91,9 +95,12 @@ if B == 'Nenhum':
 else:
     B = float(B[1:])
 
+# Definição da estimativa de 1 vida (em qualquer unidade temporal) para a população
 vida = st.sidebar.number_input(
     "Defina o equivalente a 1 vida (opicional)", step=10)
 
+# Definição do método utilizado (MLE - Verossimilhança ou LS (RRX, RRY) - Mínimos Quadrados)
+# Apenas o método MLE permite seleção do Otimizador ("TNC", "L-BFGS-B", "Nelder-Mead" ou "Powell")
 method = st.sidebar.selectbox("Escolha o Método",
                               ("MLE", "LS", "RRX",
                                   "RRY"),
@@ -123,6 +130,8 @@ else:
                                      'Nelder-Mead' ou 'Powell"""
                          )
 
+# Função para o cálculo Weibull
+
 
 def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, method, B):
     failures = []
@@ -133,6 +142,7 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     for j in amostras_censuradas:
         censored.append(amostras_censuradas[j])
 
+# Criação do gráfico Weibull
     try:
         fig1, ax1 = plt.subplots()
         fit = Fit_Weibull_2P(failures=failures,
@@ -155,6 +165,8 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         plt.ylabel('Probabilidade de Falha')
         plt.legend().remove()
         st.subheader(f"Resultados de Fit Weibull 2P({CI:.0%} CI):")
+
+        # Resultados do cálculo Weibull
         f"Otimizador: {fit.optimizer}"
         f"Método: {fit.method}"
         f"Quantidade Amostras Falhadas = {len(failures)}"
@@ -170,12 +182,13 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         Abaixo = fit.quantiles.loc[fit.quantiles['Lower Estimate'] < vida]
         Acima = fit.quantiles.loc[fit.quantiles['Lower Estimate'] > vida]
 
+# Anotação para vida equivalente ao B escolhido
         if B != None:
             R = B/100
             Vida_B = (
                 fit.quantiles.loc[fit.quantiles['Quantile'] == R]).values[0][1]
             B_annotate = f'{Vida_B:.0f}'
-            annot2 = ax1.annotate(
+            ax1.annotate(
                 f"""B{B:.0f}: {B_annotate}""",
                 xy=(Vida_B, R),
                 xytext=(-20, 5),
@@ -184,6 +197,7 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
             plt.plot([xlim_min, Vida_B, Vida_B],
                      [R, R, 0.01], color='blue')
 
+# Anotação para percentil estimado para 1 vida
         if Abaixo.size > 0 and Acima.size > 0:
             x = [
                 np.log10(
@@ -197,17 +211,17 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
             Falha_Vida = 10**(interpolate(np.log10(vida)))
             texto_annotate = f'{Falha_Vida:.1%}'
             texto_annotate = texto_annotate.replace('.', ',')
-            annot1 = ax1.annotate(
+            ax1.annotate(
                 f"""1 vida: {texto_annotate}""",
                 xy=(xlim_min, Falha_Vida),
                 xytext=(5, 8),
                 textcoords='offset points'
             )
-            annot1.set_visible(True)
             plt.plot([xlim_min, vida, vida], [
                      Falha_Vida, Falha_Vida, 0.01], color='blue', linestyle='dashed')
         st.pyplot(fig1)
 
+# Cálculo da distribuição PDF
         fig2, ax2 = plt.subplots()
         dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
         yvalues = dist_1.PDF()
@@ -224,6 +238,7 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
     return
 
 
+# Geração do Botão para realização do cálculo
 if num_falhas >= 5:
     calcular_Button = st.sidebar.button(
         "Calcular", disabled=False, help="Número mínimo de amostras falhadas = 5 (ideal mínimo 6)")

@@ -1,6 +1,5 @@
 from statistics import quantiles
 import streamlit as st
-import streamlit.components.v1 as components
 from reliability.Distributions import Weibull_Distribution
 from reliability.Fitters import Fit_Weibull_2P
 from reliability.Probability_plotting import plot_points
@@ -8,14 +7,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
-
-
-def valorB(B):
-    if B == 'Nenhum':
-        B = None
-    else:
-        B = B[1:]
-    return B
 
 
 st.title(
@@ -95,8 +86,10 @@ B = st.sidebar.selectbox("Defina o B desejado (opcional)",
                          help="""O B define a Probalidade (R) desejada.
                         A seleção escolhida irá indicar a vida prevista 
                         para o B escolhido.""")
-B = valorB(B)
-print(B)
+if B == 'Nenhum':
+    B = None
+else:
+    B = float(B[1:])
 
 vida = st.sidebar.number_input(
     "Defina o equivalente a 1 vida (opicional)", step=10)
@@ -178,18 +171,18 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         Acima = fit.quantiles.loc[fit.quantiles['Lower Estimate'] > vida]
 
         if B != None:
-            R = (float(B)/100)
+            R = B/100
             Vida_B = (
                 fit.quantiles.loc[fit.quantiles['Quantile'] == R]).values[0][1]
             B_annotate = f'{Vida_B:.0f}'
             annot2 = ax1.annotate(
-                f"""B{B}: {B_annotate}""",
-                xy=(Vida_B, 0.01),
-                xytext=(5, 5),
+                f"""B{B:.0f}: {B_annotate}""",
+                xy=(Vida_B, R),
+                xytext=(-20, 5),
                 textcoords='offset points'
             )
             plt.plot([xlim_min, Vida_B, Vida_B],
-                     [R, R, 0.01], 'blue')
+                     [R, R, 0.01], color='blue')
 
         if Abaixo.size > 0 and Acima.size > 0:
             x = [
@@ -207,15 +200,14 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
             annot1 = ax1.annotate(
                 f"""1 vida: {texto_annotate}""",
                 xy=(xlim_min, Falha_Vida),
-                xytext=(5, 5),
+                xytext=(5, 8),
                 textcoords='offset points'
             )
             annot1.set_visible(True)
             plt.plot([xlim_min, vida, vida], [
-                     Falha_Vida, Falha_Vida, 0.01], 'red')
+                     Falha_Vida, Falha_Vida, 0.01], color='blue', linestyle='dashed')
         st.pyplot(fig1)
 
-        # with cont2:
         fig2, ax2 = plt.subplots()
         dist_1 = Weibull_Distribution(alpha=fit.alpha, beta=fit.beta)
         yvalues = dist_1.PDF()
@@ -243,18 +235,14 @@ if calcular_Button:
     calculo_weibull(amostras_falhadas, amostras_censuradas,
                     CI, optimizer, method, B)
 
-st.sidebar.write("Desenvolvido por **Breno Ribeiro**")
-cols = st.sidebar.columns(8)
-cols[6].markdown(
-    """<a href='https://www.linkedin.com/in/breno-ribeiro-8b062890/'>
-            <img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2RYeN56EvozwyyxYGDw4dTu-pbUZyNxnF93zSLUcOlQ&s'
-             alt='Linkedin' style='width:20px;height:20px;'>
-        </a>""",
-    unsafe_allow_html=True)
-cols[7].markdown(
-    """<a href='mailto:breduribeiro@gmail.com'>
-            <img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAAF43Dcua1axzMUg1OIG-xjuKerm29tGX7SZnbskgAw&s'
-             alt='Mail to' style='width:20px;height:20px;'>
-        </a>""",
-    unsafe_allow_html=True)
+string_Linkedin = """<a href='https://www.linkedin.com/in/breno-ribeiro-8b062890/'>
+                     <img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2RYeN56EvozwyyxYGDw4dTu-pbUZyNxnF93zSLUcOlQ&s'
+                     alt='Linkedin' style='width:20px;height:20px;'>
+                     </a>"""
+string_Email = """<a href='mailto:breduribeiro@gmail.com'>
+                  <img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAAF43Dcua1axzMUg1OIG-xjuKerm29tGX7SZnbskgAw&s'
+                  alt='Mail to' style='width:20px;height:20px;'>
+                  </a>"""
+st.sidebar.markdown(
+    f"""Desenvolvido por **Breno Ribeiro** {string_Linkedin} {string_Email}""", unsafe_allow_html=True)
 st.sidebar.write("")

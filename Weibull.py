@@ -5,8 +5,6 @@ from reliability.Fitters import Fit_Weibull_2P
 from reliability.Probability_plotting import plot_points
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
-from scipy.interpolate import interp1d
 
 # Programa para análise estatística de vida de amostras através do cálculo Weibull
 st.title(
@@ -185,40 +183,40 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
 # Anotação para vida equivalente ao B escolhido
         if B != None:
             R = B/100
-            Vida_B = (
-                fit.quantiles.loc[fit.quantiles['Quantile'] == R]).values[0][1]
-            B_annotate = f'{Vida_B:.0f}'
+            Vida_B = fit.distribution.CDF(
+                CI_type='time', CI_y=R, show_plot=False)
+            B_annotate = f'{Vida_B[0]:.0f}'
             ax1.annotate(
                 f"""B{B:.0f}: {B_annotate}""",
-                xy=(Vida_B, R),
+                xy=(Vida_B[0], R),
                 xytext=(-20, 5),
                 textcoords='offset points'
             )
-            plt.plot([xlim_min, Vida_B, Vida_B],
+            plt.plot([xlim_min, Vida_B[0], Vida_B[0]],
                      [R, R, 0.01], color='blue')
 
 # Anotação para percentil estimado para 1 vida
-        if Abaixo.size > 0 and Acima.size > 0:
-            x = [
-                np.log10(
-                    Abaixo.values[(Abaixo['Lower Estimate'].size)-1][1]),
-                np.log10(Acima.values[0][1])]
-            y = [
-                np.log10(
-                    Abaixo.values[(Abaixo['Lower Estimate'].size)-1][0]),
-                np.log10(Acima.values[0][0])]
-            interpolate = interp1d(x, y)
-            Falha_Vida = 10**(interpolate(np.log10(vida)))
-            texto_annotate = f'{Falha_Vida:.1%}'
-            texto_annotate = texto_annotate.replace('.', ',')
-            ax1.annotate(
-                f"""1 vida: {texto_annotate}""",
-                xy=(xlim_min, Falha_Vida),
-                xytext=(5, 8),
-                textcoords='offset points'
-            )
-            plt.plot([xlim_min, vida, vida], [
-                     Falha_Vida, Falha_Vida, 0.01], color='blue', linestyle='dashed')
+        B_Vida = 0
+        y = 0.5
+        if vida > 0:
+            while round(B_Vida) != vida:
+                B_Vida = fit.distribution.CDF(
+                    CI_type='time', CI_y=y, show_plot=False)
+                y = float(y*vida/B_Vida[0])
+                B_Vida = B_Vida[0]
+                if y < 0.01 or y > 0.99:
+                    break
+            if y > 0.01 and y < 0.99:
+                texto_annotate = f'{y:.1%}'
+                texto_annotate = texto_annotate.replace('.', ',')
+                ax1.annotate(
+                    f"""1 vida: {texto_annotate}""",
+                    xy=(xlim_min, y),
+                    xytext=(5, 8),
+                    textcoords='offset points'
+                )
+                plt.plot([xlim_min, vida, vida], [
+                    y, y, 0.01], color='blue', linestyle='dashed')
         st.pyplot(fig1)
 
 # Cálculo da distribuição PDF
@@ -233,8 +231,8 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         st.pyplot(fig2)
 
     except ValueError as erro:
-        st.error(
-            "Não foi possível realizar a regressão com o Método selecionado. Tente novamente, escolhendo outro Método.")
+        st.error(erro)
+        # "Não foi possível realizar a regressão com o Método selecionado. Tente novamente, escolhendo outro Método.")
     return
 
 

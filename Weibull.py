@@ -4,11 +4,12 @@ from reliability.Distributions import Weibull_Distribution
 from reliability.Fitters import Fit_Weibull_2P
 from reliability.Probability_plotting import plot_points
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 # Programa para análise estatística de vida de amostras através do cálculo Weibull
 st.title(
-    "[Weibull](https://pt.wikipedia.org/wiki/Distribui%C3%A7%C3%A3o_de_Weibull)")
+    "[Weibull](https://reliawiki.org/index.php/The_Weibull_Distribution)")
 
 expand = st.expander("Instruções", expanded=False)
 with expand:
@@ -32,7 +33,7 @@ with expand:
     \n[Powell](https://en.wikipedia.org/wiki/Powell%27s_method)
     \nClique em 'Calcular'
     \nSerão apresentados as vidas das amostras falhadas e censuradas, o Método e o Otimizador escolhidos,
-    os parâmetros Alfa e Beta, os parâmetros para o cálculo da regressão linear, a tabela dos percentis de falha
+    os parâmetros Alfa e Beta, a qualidade da regressão (quanto mais próximo de 0, maior a qualidade), a tabela dos percentis de falha
     e os gráficos Weibull de Probabilidade e Distribuição. Todas as tabelas e gráficos podem ser expandidos
     (ícone de expansão aparece no canto superior direito do elemento selecionado), selecionados e copiados
     para a área de transferência."""
@@ -43,7 +44,7 @@ amostras_falhadas = dict()
 amostras_censuradas = dict()
 xmin = 0
 xmax = 0
-num_falhas = st.sidebar.slider("Quantas amostras com falhas?", 0, 15, 0)
+num_falhas = st.sidebar.slider("Quantas amostras com falhas?", 4, 20, 4)
 num_censuradas = st.sidebar.slider(
     "Quantas amostras censuradas?", 0, 15, 0)
 if num_falhas > 0:
@@ -177,9 +178,6 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         st.dataframe(pd.DataFrame(fit.quantiles).style.format(
             decimal=',', thousands='.', precision=2))
 
-        Abaixo = fit.quantiles.loc[fit.quantiles['Lower Estimate'] < vida]
-        Acima = fit.quantiles.loc[fit.quantiles['Lower Estimate'] > vida]
-
 # Anotação para vida equivalente ao B escolhido
         if B != None:
             R = B/100
@@ -217,7 +215,6 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
                 )
                 plt.plot([xlim_min, vida, vida], [
                     y, y, 0.01], color='blue', linestyle='dashed')
-        st.pyplot(fig1)
 
 # Cálculo da distribuição PDF
         fig2, ax2 = plt.subplots()
@@ -228,8 +225,20 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         plt.xlabel('Vida')
         plt.ylabel('Densidade')
 
-        st.pyplot(fig2)
+# Cálculo de R_quadrado
+        BIC = fit.goodness_of_fit.loc[fit.goodness_of_fit["Goodness of fit"]
+                                      == "BIC"]["Value"].values[0]
+        BIC = f'{BIC:.2f}'.replace('.', ',')
 
+        ax1.annotate(
+            f"""Qualidade de Ajuste \n      BIC: {BIC:}""",
+            xy=(xlim_min, 0.99),
+            xytext=(30, -30),
+            textcoords='offset points',
+            bbox={'boxstyle': 'round', 'fc': 'w'}
+        )
+        st.pyplot(fig1)
+        st.pyplot(fig2)
     except ValueError as erro:
         st.error(erro)
         # "Não foi possível realizar a regressão com o Método selecionado. Tente novamente, escolhendo outro Método.")
@@ -237,13 +246,9 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
 
 
 # Geração do Botão para realização do cálculo
-if num_falhas >= 5:
-    calcular_Button = st.sidebar.button(
-        "Calcular", disabled=False, help="Número mínimo de amostras falhadas = 5 (ideal mínimo 6)")
+calcular_Button = st.sidebar.button(
+    "Calcular", disabled=False, help="Número mínimo de amostras falhadas = 4 (ideal mínimo 6)")
 
-else:
-    calcular_Button = st.sidebar.button(
-        "Calcular", disabled=True, help="Número mínimo de amostras falhadas = 5 (ideal mínimo 6)")
 if calcular_Button:
     calculo_weibull(amostras_falhadas, amostras_censuradas,
                     CI, optimizer, method, B)

@@ -4,7 +4,6 @@ from reliability.Distributions import Weibull_Distribution
 from reliability.Fitters import Fit_Weibull_2P
 from reliability.Probability_plotting import plot_points
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 # Programa para análise estatística de vida de amostras através do cálculo Weibull
@@ -81,7 +80,7 @@ if xmin > 0 and xmax > 0:
         "Máximo X Gráfico Weibull:", xmax, xmax*3, xmax*2)
 
 # Definição do Intervalo de Confiança (C)
-CI = st.sidebar.slider("Intervalo de Confiança - C", 0.50, 0.99, 0.90)
+CI = st.sidebar.slider("Intervalo de Confiança - IC", 0.50, 0.99, 0.90)
 
 # Definição da Confiabilidade (B para Probabilidade de falha, R para Probabilidade de Sucesso)
 B = st.sidebar.selectbox("Defina o B desejado (opcional)",
@@ -154,16 +153,16 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
 
         plt.xlim(xlim_min, xlim_max)
         plt.ylim(0.01, 0.99)
-        alpha = f'{fit.alpha:_.2f}'
-        alpha = alpha.replace('.', ',').replace('_', '.')
+        alpha = f'{fit.alpha:,.0f}'
+        alpha = alpha.replace(',', '.')
         beta = f'{fit.beta:_.2f}'
         beta = beta.replace('.', ',').replace('_', '.')
-        plt.title(f"""Probabilidade Weibull ({CI:.0%} CI)
+        plt.title(f"""Probabilidade Weibull ({CI:.0%} IC)
                     \n(α={alpha}; β={beta})""")
         plt.xlabel('Vida')
         plt.ylabel('Probabilidade de Falha')
         plt.legend().remove()
-        st.subheader(f"Resultados de Fit Weibull 2P({CI:.0%} CI):")
+        st.subheader(f"Resultados de Fit Weibull 2P({CI:.0%} IC):")
 
         # Resultados do cálculo Weibull
         f"Otimizador: {fit.optimizer}"
@@ -171,11 +170,25 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         f"Quantidade Amostras Falhadas = {len(failures)}"
         f"Quantidade Amostras Censuradas = {len(censored)} "
 
-        st.dataframe(pd.DataFrame(fit.results).style.format(
+        st.dataframe(pd.DataFrame(fit.results.rename(
+            columns={'Parameter': 'Parâmetro',
+                     'Point Estimate': 'Ponto Estimado',
+                     'Standard Error': 'Desvio Padrão',
+                     'Lower CI': 'Mínimo IC',
+                     'Upper CI': 'Máximo IC'
+                     })).style.format(
             decimal=',', thousands='.', precision=2))
-        st.dataframe(pd.DataFrame(fit.goodness_of_fit).style.format(
+        st.dataframe(pd.DataFrame(fit.goodness_of_fit.rename(
+            columns={'Goodness of fit': 'Qualidade de Ajuste',
+                     'Value': 'Valor'
+                     })).style.format(
             decimal=',', thousands='.', precision=2))
-        st.dataframe(pd.DataFrame(fit.quantiles).style.format(
+        st.dataframe(pd.DataFrame(fit.quantiles.rename(
+            columns={'Quantile': 'Quantil',
+                     'Lower Estimate': 'Estimativa Inferior',
+                     'Point Estimate': 'Ponto Estimado',
+                     'Upper Estimate': 'Estimativa Superior'
+                     })).style.format(
             decimal=',', thousands='.', precision=2))
 
 # Anotação para vida equivalente ao B escolhido
@@ -225,7 +238,7 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         plt.xlabel('Vida')
         plt.ylabel('Densidade')
 
-# Inserir BIC no gráfico
+# Cálculo de R_quadrado
         BIC = fit.goodness_of_fit.loc[fit.goodness_of_fit["Goodness of fit"]
                                       == "BIC"]["Value"].values[0]
         BIC = f'{BIC:.2f}'.replace('.', ',')

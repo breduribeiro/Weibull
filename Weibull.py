@@ -225,7 +225,7 @@ def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, metho
         plt.xlabel('Vida')
         plt.ylabel('Densidade')
 
-# Cálculo de R_quadrado
+# Inserir BIC no gráfico
         BIC = fit.goodness_of_fit.loc[fit.goodness_of_fit["Goodness of fit"]
                                       == "BIC"]["Value"].values[0]
         BIC = f'{BIC:.2f}'.replace('.', ',')

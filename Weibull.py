@@ -48,9 +48,7 @@ num_censuradas = st.sidebar.slider(
     "Quantas amostras censuradas?", 0, 15, 0)
 if num_falhas > 0:
     st.sidebar.write("Amostras Falhadas:")
-    for i in range(num_falhas):
-        amostras_falhadas[i] = st.sidebar.number_input(
-            f"Amostra Falhada {i+1}", step=10)
+    amostras_falhadas={i:st.sidebar.number_input(f"Amostra Falhada {i+1}", step=10) for i in range(num_falhas)}
     col1.write(f"Amostras Falhadas:")
     for j in range(num_falhas):
         col1.write(f"Amostra {j+1}: {amostras_falhadas[j]}")
@@ -60,9 +58,7 @@ if num_falhas > 0:
     xmax = fmax
 if num_censuradas > 0:
     st.sidebar.write("Amostras Censuradas:")
-    for i in range(num_censuradas):
-        amostras_censuradas[i] = st.sidebar.number_input(
-            f"Amostra Censurada {i+num_falhas+1}", step=10)
+    amostras_censuradas={i:st.sidebar.number_input(f"Amostra Censurada {i+1}", step=10) for i in range(num_censuradas)}
     col2.write(f"Amostras Censuradas:")
     for j in range(num_censuradas):
         col2.write(f"Amostra {j+num_falhas+1}: {amostras_censuradas[j]}")
@@ -132,13 +128,8 @@ else:
 
 
 def calculo_weibull(amostras_falhadas, amostras_censuradas, CI, optimizer, method, B):
-    failures = []
-    censored = []
-    for i in amostras_falhadas:
-        failures.append(amostras_falhadas[i])
-
-    for j in amostras_censuradas:
-        censored.append(amostras_censuradas[j])
+    failures = [amostras_falhadas[i] for i in amostras_falhadas]
+    censored = [amostras_censuradas[i] for i in amostras_censuradas]
 
 # Criação do gráfico Weibull
     try:

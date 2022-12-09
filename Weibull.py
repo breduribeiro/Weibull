@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # Programa para análise estatística de vida de amostras através do cálculo Weibull
-st.title(
+st.set_page_config(page_title="Cálculo Weibull Online")
+st.header(
     "[Weibull](https://reliawiki.org/index.php/The_Weibull_Distribution)")
 
 expand = st.expander("Instruções", expanded=False)

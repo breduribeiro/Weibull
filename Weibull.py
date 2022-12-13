@@ -49,7 +49,8 @@ num_censuradas = st.sidebar.slider(
     "Quantas amostras censuradas?", 0, 15, 0)
 if num_falhas > 0:
     st.sidebar.write("Amostras Falhadas:")
-    amostras_falhadas={i:st.sidebar.number_input(f"Amostra Falhada {i+1}", step=10) for i in range(num_falhas)}
+    amostras_falhadas = {i: st.sidebar.number_input(
+        f"Amostra Falhada {i+1}", step=10) for i in range(num_falhas)}
     col1.write(f"Amostras Falhadas:")
     for j in range(num_falhas):
         col1.write(f"Amostra {j+1}: {amostras_falhadas[j]}")
@@ -59,7 +60,8 @@ if num_falhas > 0:
     xmax = fmax
 if num_censuradas > 0:
     st.sidebar.write("Amostras Censuradas:")
-    amostras_censuradas={i:st.sidebar.number_input(f"Amostra Censurada {i+1}", step=10) for i in range(num_censuradas)}
+    amostras_censuradas = {i: st.sidebar.number_input(
+        f"Amostra Censurada {i+1}", step=10) for i in range(num_censuradas)}
     col2.write(f"Amostras Censuradas:")
     for j in range(num_censuradas):
         col2.write(f"Amostra {j+num_falhas+1}: {amostras_censuradas[j]}")

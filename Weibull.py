@@ -1,5 +1,6 @@
 from statistics import quantiles
 import streamlit as st
+import streamlit.components.v1 as components
 from reliability.Distributions import Weibull_Distribution
 from reliability.Fitters import Fit_Weibull_2P
 from reliability.Probability_plotting import plot_points
@@ -10,7 +11,8 @@ import pandas as pd
 st.set_page_config(page_title="Cálculo Weibull Online")
 st.header(
     "[Weibull](https://reliawiki.org/index.php/The_Weibull_Distribution)")
-
+components.html(
+    "<meta name='google-site-verification' content='0BG_7dAnC4xIu1xRSx2g-J4Rp42ZDDQ-ZDs_O8wZ1q0' />", height=None, width=None)
 expand = st.expander("Instruções", expanded=False)
 with expand:
     """Os campos de preenchimento para realização do cálculo Weibull estão na barra

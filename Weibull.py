@@ -9,10 +9,11 @@ import pandas as pd
 
 # Programa para análise estatística de vida de amostras através do cálculo Weibull
 st.set_page_config(page_title="Cálculo Weibull Online")
-st.header(
-    "[Weibull](https://reliawiki.org/index.php/The_Weibull_Distribution)")
 components.html(
     "<head><meta name='google-site-verification' content='0BG_7dAnC4xIu1xRSx2g-J4Rp42ZDDQ-ZDs_O8wZ1q0' /></head>", height=None, width=None)
+st.header(
+    "[Weibull](https://reliawiki.org/index.php/The_Weibull_Distribution)")
+
 expand = st.expander("Instruções", expanded=False)
 with expand:
     """Os campos de preenchimento para realização do cálculo Weibull estão na barra
